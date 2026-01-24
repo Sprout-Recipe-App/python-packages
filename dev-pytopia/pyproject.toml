@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dev-pytopia"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "colorama>=0.4.6",
+    "click>=8.1.7",
+    "aiofiles>=24.1.0",
+    "watchfiles>=1.0.3",
+    "pathspec>=0.12.1",
+    "rich>=13.9.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["source_code/dev_pytopia"]
+
+[tool.ruff]
+line-length = 115
+src = ["source_code", "tests"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = true
+relative-imports-order = "closest-to-furthest"
+
+[project.scripts]
+dev-pytopia = "dev_pytopia.terminal_functionality:main"

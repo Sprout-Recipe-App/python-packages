@@ -1,0 +1,7 @@
+directory_structure:
+  - file: "<<<CreatedPathName>>>Subview.swift"
+    template: "Subview.md"
+  - file: "<<<CreatedPathName>>>SubviewStateHandler.swift"
+    template: "StateHandler.md"
+  - file: "<<<CreatedPathName>>>SubviewStyles.swift"
+    template: "Styles.md"

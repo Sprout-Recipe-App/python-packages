@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "artificial-mycelium"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "database-dimension @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=database-dimension",
+    "google-genai>=1.0.0",
+    "google-generativeai>=0.8.6",
+    "openai>=1.92.0",
+    "pillow>=10.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["source_code/artificial_mycelium"]
+
+[dependency-groups]
+dev = ["dev-pytopia"]
+
+# For local development, uncomment these to use local paths instead of git:
+[tool.uv.sources]
+database-dimension = { path = "../database-dimension", editable = true }
+dev-pytopia = { path = "../dev-pytopia", editable = true }
+
+[tool.ruff]
+line-length = 115
+src = ["source_code"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501", "E731"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = true
+relative-imports-order = "closest-to-furthest"
+known-first-party = [
+    "database_dimension",
+    "dev_pytopia",
+]

@@ -1,0 +1,4 @@
+directory_structure:
+  - file: "__init__.py"
+    template: "terminal_functionality_init.md"
+  - directory: "commands"

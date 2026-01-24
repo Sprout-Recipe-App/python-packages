@@ -1,0 +1,101 @@
+universal_instructions: |
+  1. **Preserve functionality**: Do not change the program's logic or functionality.
+  2. **Remove empty sections**: If any template section has no code, remove that section header entirely. Keep empty documentation sections.
+  3. **Comments and documentation**:
+     a. Preserve all existing comments from the original code without modifying them.
+     b. Add only the comments explicitly specified in the template. 
+     c. Do not add extra comments or documentation beyond those in the template no matter what.
+     d. Do not adjust strings in the code.
+
+swift_instructions: |
+  1. **Organize code with '// MARK:'**:
+    a. For each '// MARK:' line in the template, determine how many '///' comment lines immediately follow in the template.
+    b. In the final code, replicate the same number of '///' lines after the matching '// MARK:' line.
+    c. Ensure no extra '///' lines appear if they do not appear in the template.
+    d. Add a blank line between the end of the MARK section and the code or '//' comment that follows the MARK section. The end of a MARK section is the final '///' line of the MARK section.
+      ```swift
+      // MARK: - Some Section
+      /// Some comments
+      /// This is the end of the MARK section
+
+      // Put one blank line between the end of the MARK section and the code or single line comment that follows the MARK section like in this example.
+      ```
+    e. Don't remove import statements.
+  2. **Group and label the code**:
+    a. Include group headers in the code (e.g., '// Constant Group') only if there is at least one relevant piece of code in that group. Notice that group headers have a "// " prefix. '// MARK:' lines deliminating code sectionsshould not be treated as group headers and vice versa.
+    b. All code should be put in one of the groups specified in the template. No code should be ungrouped. Examine the content of the file to determine which group to put the code in.
+    c. Follow the group order shown in the Swift template
+    d. Place code immediately after its group header. For example:
+      ```swift
+      // Constant Group
+      let someConstant = "someValue"
+      ```
+    e. If a group is empty, remove its header.
+  3. **Replace '<<<CreatedPathStem>>> with the name of the file without the directory path.**
+
+python_instructions: |
+  1. Ensure the documentation box at the top of the file is present and is wrapped in '"""'.
+  2. If you do not recognize an import name, then categorize it as a 'local development' or 'current project' import.
+     a. You can distinguish between 'local development' and 'current project' imports by the presence of relative imports which signify a 'current project' import.
+  3. Within classes organize the code into appropriate groups in this order:
+     a. Class Attributes
+     b. __init__ and Other Dunder Methods
+     c. Public Properties
+     d. Abstract Methods
+     e. Public Methods
+     f. Protected Methods
+     g. Private Methods
+     h. Class Methods
+     i. Static Methods
+  4. Put a header comment above each group (ex. Put "# Class Attributes" above the class attributes group).
+  5. Replace '<<<created_path_name>>> with the name of the file without the directory path.
+
+swift:
+  file_templates:
+    Page.md:
+      instructions: ""
+    
+    PageContext.md:
+      instructions: ""
+    
+    PageOperations.md:
+      instructions: ""
+    
+    Subview.md:
+      instructions: |
+        1. If a property is in the body of the view, then keep it there.
+    
+    View.md:
+      instructions: ""
+
+    APIOperation.md:
+      instructions: |
+        1. If there are no headers, query parameters, or body, then remove the corresponding code and comments from the template.
+      
+    DataModel.md:
+      instructions: |
+        1. Omit the "Coding Conformance" section if it's not needed.
+        2. Omit the designated initializer if it's not needed.
+
+  directory_templates:
+    page.yaml:
+      instructions: ""
+
+python:
+  file_templates:
+    default_file_template.md:
+      instructions: ""
+    
+    data_handler.md:
+      instructions: ""
+    
+    api_operation.md:
+      instructions: 
+        1. Omit the RequestSchema class and the REQUEST_SCHEMA class-level attribute if the RequestSchema class has no headers, query parameters, or body.
+
+    __init__.md:
+      instructions: |
+        1. Remove the __all__ = [] line if the array is empty.
+
+    __main__.md:
+      instructions: ""

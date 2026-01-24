@@ -1,0 +1,9 @@
+from terminal_time.v1.terminal_functionality_framework.terminal_command_registry import TerminalCommandRegistry
+from terminal_time.v1.terminal_functionality_framework.utilities import execute_command
+
+terminal_command_registry = TerminalCommandRegistry()
+
+__all__ = ["terminal_command_registry"]
+
+terminal_command_registry.find_and_load_commands()
+execute_command(terminal_command_registry)

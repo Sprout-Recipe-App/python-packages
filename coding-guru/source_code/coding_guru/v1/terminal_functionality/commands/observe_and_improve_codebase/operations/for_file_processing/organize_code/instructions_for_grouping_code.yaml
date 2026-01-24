@@ -1,0 +1,49 @@
+universal_instructions: |
+  1. Identify the group headers in the template and group the code accordingly ommitting all group headers with no code.
+
+swift_instructions: 
+
+python_instructions: ""
+
+swift:
+  file_templates:
+    Page.md:
+      instructions: ""
+    
+    PageContext.md:
+      instructions: ""
+    
+    PageOperations.md:
+      instructions: ""
+    
+    Subview.md:
+      instructions: ""
+    View.md:
+      instructions: ""
+
+    APIOperation.md:
+      instructions: ""
+
+    DataModel.md:
+      instructions: ""
+
+  directory_templates:
+    page.yaml:
+      instructions: ""
+
+python:
+  file_templates:
+    default_file_template.md:
+      instructions: ""
+    
+    data_handler.md:
+      instructions: ""
+    
+    api_operation.md:
+      instructions: 
+
+    __init__.md:
+      instructions:
+
+    __main__.md:
+      instructions: ""

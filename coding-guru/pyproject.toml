@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coding-guru"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles",
+    "pynput",
+    "tree-sitter",
+    "click",
+    "watchfiles>=1.0.3",
+    "pyyaml",
+    "rich",
+    "dev-pytopia @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=dev-pytopia",
+    "artificial-mycelium @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=artificial-mycelium",
+    "fast-server @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=fast-server",
+    "jinja2>=3.1.4",
+    "markupsafe>=2.1.3",
+    "nicegui>=2.16.0",
+    "numpy>=2.2.4",
+    "openai>=1.66.3",
+    "python-dotenv>=1.0.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["source_code/coding_guru"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.5",
+    "ruff>=0.14.0",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+# For local development, uncomment to use local paths instead of git:
+[tool.uv.sources]
+dev-pytopia = { path = "../dev-pytopia", editable = true }
+artificial-mycelium = { path = "../artificial-mycelium", editable = true }
+fast-server = { path = "../fast-server", editable = true }
+
+[tool.pytest.ini_options]
+addopts = "-v -s"
+pythonpath = ["source_code"]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "quicktest: mark a test as a quick test",
+]
+
+[tool.ruff]
+line-length = 115
+src = ["source_code"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501", "E731"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = true
+relative-imports-order = "closest-to-furthest"
+known-first-party = [
+    "coding_guru",
+    "dev_pytopia",
+    "artificial_mycelium",
+    "fast_server"
+]
+
+[project.scripts]
+coding-guru-cli-runner = "coding_guru.v1.terminal_functionality:main"

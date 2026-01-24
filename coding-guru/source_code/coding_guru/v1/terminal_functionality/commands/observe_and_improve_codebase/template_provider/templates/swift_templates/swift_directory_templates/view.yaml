@@ -1,0 +1,7 @@
+directory_structure:
+  - file: "<<<CreatedPathName>>>.swift"
+    template: "View.md"
+  - file: "<<<CreatedPathName>>>StateHandler.swift"
+    template: "StateHandler.md"
+  - file: "<<<CreatedPathName>>>Styles.swift"
+    template: "Styles.md"

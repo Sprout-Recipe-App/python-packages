@@ -1,0 +1,13 @@
+directory_structure:
+  - file: "<<<CreatedPathName>>>Context.swift"
+    template: "PageContext.md"
+  - directory: "Operations"
+    directory_structure:
+      - file: "<<<CreatedPathName>>>Operations.swift"
+        template: "PageOperations.md"
+      - directory: "APIOperations"
+  - directory: "Views"
+    directory_structure:
+      - file: "<<<CreatedPathName>>>.swift"
+        template: "Page.md"
+      - directory: "Subviews" 

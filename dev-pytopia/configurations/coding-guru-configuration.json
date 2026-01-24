@@ -1,0 +1,7 @@
+{
+    "directory_structure_generation": {
+        "directory_to_examine": "../",
+        "excluded_items": [],
+        "output_path": "../documentation/dev_pytopia_package_directory_structure.md"
+    }
+}

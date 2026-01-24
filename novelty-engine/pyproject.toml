@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "novelty-engine"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fast-server @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=fast-server",
+    "database-dimension @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=database-dimension",
+    "dev-pytopia @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=dev-pytopia",
+    "python-dotenv>=1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["source_code/novelty_engine"]
+
+# For local development, uncomment to use local paths instead of git:
+[tool.uv.sources]
+fast-server = { path = "../fast-server", editable = true }
+database-dimension = { path = "../database-dimension", editable = true }
+dev-pytopia = { path = "../dev-pytopia", editable = true }
+
+
+[project.scripts]
+novelty-engine = "novelty_engine.terminal_functionality:main"
+
+[tool.ruff]
+line-length = 115
+src = ["source_code", "tests"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = true
+relative-imports-order = "closest-to-furthest"
+
+

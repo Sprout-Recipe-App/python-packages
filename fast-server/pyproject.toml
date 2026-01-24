@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fast-server"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "rich>=13.9.4",
+    "dev-pytopia @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=dev-pytopia",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["source_code/fast_server"]
+
+# For local development, uncomment to use local path instead of git:
+[tool.uv.sources]
+dev-pytopia = { path = "../dev-pytopia", editable = true }
+
+[tool.ruff]
+line-length = 115
+src = ["source_code"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["E501", "E731"]
+per-file-ignores = { "__init__.py" = ["F401"] }
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = true
+relative-imports-order = "closest-to-furthest"
+known-first-party = [
+    "dev_pytopia",
+    "artificial_mycelium",
+    "fast_server",
+]
