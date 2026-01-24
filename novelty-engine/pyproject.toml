@@ -7,9 +7,9 @@ name = "novelty-engine"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fast-server @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=fast-server",
-    "database-dimension @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=database-dimension",
-    "dev-pytopia @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=dev-pytopia",
+    "fast-server @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=fast-server",
+    "database-dimension @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=database-dimension",
+    "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
     "python-dotenv>=1.0",
 ]
 

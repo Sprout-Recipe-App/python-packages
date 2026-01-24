@@ -19,22 +19,22 @@ Install a specific package from this repository:
 
 ```bash
 # Using pip
-pip install "package-name @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=package-name"
+pip install "package-name @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=package-name"
 
 # Using uv
-uv pip install "package-name @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=package-name"
+uv pip install "package-name @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=package-name"
 ```
 
 Example:
 ```bash
-pip install "database-dimension @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=database-dimension"
+pip install "database-dimension @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=database-dimension"
 ```
 
 ## Local Development
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/python-packages.git
+   git clone https://github.com/CodeThatCodes/python-packages.git
    cd python-packages
    ```
 

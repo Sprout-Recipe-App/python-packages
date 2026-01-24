@@ -12,7 +12,7 @@ dependencies = [
     "click>=8.1.7",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
-    "dev-pytopia @ git+https://github.com/YOUR_GITHUB_USERNAME/python-packages@main#subdirectory=dev-pytopia",
+    "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
 ]
 
 # For local development, uncomment to use local path instead of git:
