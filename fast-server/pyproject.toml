@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/fast_server"]
+packages = ["fast_server"]
 
 # For local development, uncomment to use local path instead of git:
 [tool.uv.sources]
@@ -22,7 +22,7 @@ dev-pytopia = { path = "../dev-pytopia", editable = true }
 
 [tool.ruff]
 line-length = 115
-src = ["source_code"]
+src = ["."]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

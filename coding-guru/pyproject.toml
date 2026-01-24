@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/coding_guru"]
+packages = ["coding_guru"]
 
 [dependency-groups]
 dev = [
@@ -46,7 +46,7 @@ fast-server = { path = "../fast-server", editable = true }
 
 [tool.pytest.ini_options]
 addopts = "-v -s"
-pythonpath = ["source_code"]
+pythonpath = ["."]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
@@ -55,7 +55,7 @@ markers = [
 
 [tool.ruff]
 line-length = 115
-src = ["source_code"]
+src = ["."]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

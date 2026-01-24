@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/artificial_mycelium"]
+packages = ["artificial_mycelium"]
 
 [dependency-groups]
 dev = ["dev-pytopia"]
@@ -28,7 +28,7 @@ dev-pytopia = { path = "../dev-pytopia", editable = true }
 
 [tool.ruff]
 line-length = 115
-src = ["source_code"]
+src = ["."]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

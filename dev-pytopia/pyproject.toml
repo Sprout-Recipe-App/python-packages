@@ -16,11 +16,11 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/dev_pytopia"]
+packages = ["dev_pytopia"]
 
 [tool.ruff]
 line-length = 115
-src = ["source_code", "tests"]
+src = [".", "tests"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

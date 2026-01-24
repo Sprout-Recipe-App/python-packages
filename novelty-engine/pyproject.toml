@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/novelty_engine"]
+packages = ["novelty_engine"]
 
 # For local development, uncomment to use local paths instead of git:
 [tool.uv.sources]
@@ -28,7 +28,7 @@ novelty-engine = "novelty_engine.terminal_functionality:main"
 
 [tool.ruff]
 line-length = 115
-src = ["source_code", "tests"]
+src = [".", "tests"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

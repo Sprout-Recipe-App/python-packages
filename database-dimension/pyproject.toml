@@ -23,11 +23,11 @@ dev-pytopia = { path = "../dev-pytopia", editable = true }
 database-dimension = "database_dimension.terminal_functionality:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["source_code/database_dimension"]
+packages = ["database_dimension"]
 
 [tool.ruff]
 line-length = 115
-src = ["source_code"]
+src = ["."]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
