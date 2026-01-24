@@ -75,4 +75,4 @@ known-first-party = [
 ]
 
 [project.scripts]
-coding-guru-cli-runner = "coding_guru.v1.terminal_functionality:main"
+coding-guru-cli-runner = "coding_guru.terminal_functionality:main"

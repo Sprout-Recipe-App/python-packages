@@ -1,6 +1,6 @@
 from typing import cast
 
-from coding_guru.v1.terminal_functionality.commands.observe_and_improve_codebase.operations.for_file_processing.comment_code import (
+from coding_guru.terminal_functionality.commands.observe_and_improve_codebase.operations.for_file_processing.comment_code import (
     CommentCode,
 )
 from dev_pytopia import Operation

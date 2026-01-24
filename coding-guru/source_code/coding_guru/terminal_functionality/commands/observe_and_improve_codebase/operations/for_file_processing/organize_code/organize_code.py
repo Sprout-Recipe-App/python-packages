@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import cast
 
 from artificial_mycelium import AI, LLMCodeResponse, Thread
-from coding_guru.v1.terminal_functionality.commands.observe_and_improve_codebase.template_provider.template_provider import (
+from coding_guru.terminal_functionality.commands.observe_and_improve_codebase.template_provider.template_provider import (
     TemplateProvider,
 )
 
