@@ -55,5 +55,11 @@ htmlcov/
 .tox/
 .nox/
 
+# Ruff
+.ruff_cache/
+
+# Local configs
+configurations/
+
 # mypy
 .mypy_cache/
