@@ -13,10 +13,13 @@ dependencies = [
     "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["fast_server"]
 
-# For local development, uncomment to use local path instead of git:
+# For local development, use local path instead of git:
 [tool.uv.sources]
 dev-pytopia = { path = "../dev-pytopia", editable = true }
 

@@ -13,15 +13,17 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["novelty_engine"]
 
-# For local development, uncomment to use local paths instead of git:
+# For local development, use local paths instead of git:
 [tool.uv.sources]
 fast-server = { path = "../fast-server", editable = true }
 database-dimension = { path = "../database-dimension", editable = true }
 dev-pytopia = { path = "../dev-pytopia", editable = true }
-
 
 [project.scripts]
 novelty-engine = "novelty_engine.terminal_functionality:main"
@@ -40,5 +42,3 @@ force-sort-within-sections = true
 combine-as-imports = true
 split-on-trailing-comma = true
 relative-imports-order = "closest-to-furthest"
-
-

@@ -25,6 +25,9 @@ dependencies = [
     "python-dotenv>=1.0.1",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["coding_guru"]
 
@@ -38,7 +41,7 @@ dev = [
 [tool.uv]
 default-groups = ["dev"]
 
-# For local development, uncomment to use local paths instead of git:
+# For local development, use local paths instead of git:
 [tool.uv.sources]
 dev-pytopia = { path = "../dev-pytopia", editable = true }
 artificial-mycelium = { path = "../artificial-mycelium", editable = true }
