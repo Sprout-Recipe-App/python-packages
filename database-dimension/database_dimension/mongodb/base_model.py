@@ -20,18 +20,20 @@ class MongoDBBaseModel(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _convert_mongodb_types(cls, data):
-        def convert(value):
-            if isinstance(value, BaseModel):
-                return convert(value.model_dump())
-            if isinstance(value, Decimal128):
-                return value.to_decimal()
-            if isinstance(value, ObjectId):
-                return str(value)
-            if isinstance(value, dict):
-                return {("id" if key == "_id" else key): convert(nested) for key, nested in value.items()}
-            if isinstance(value, list):
-                return [convert(item) for item in value]
-            return value
+        def convert(v):
+            match v:
+                case BaseModel():
+                    return convert(v.model_dump())
+                case Decimal128():
+                    return v.to_decimal()
+                case ObjectId():
+                    return str(v)
+                case dict():
+                    return {("id" if k == "_id" else k): convert(n) for k, n in v.items()}
+                case list():
+                    return [convert(i) for i in v]
+                case _:
+                    return v
 
         return convert(data)
 
