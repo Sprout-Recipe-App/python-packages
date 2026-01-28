@@ -1,7 +1,9 @@
 import asyncio
+import random
 from typing import Any
 
 from google import genai
+from google.genai.errors import ServerError
 import httpx
 from pydantic import TypeAdapter
 
@@ -10,6 +12,7 @@ from dev_pytopia import Logger, with_error_handling
 from ..shared.api_utilities import BaseWrapper
 
 _RETRYABLE_CONNECTION_ERRORS = (httpx.ConnectError, httpx.RemoteProtocolError, ConnectionResetError)
+_RETRYABLE_SERVER_ERRORS = (ServerError,)
 
 
 @with_error_handling()
@@ -71,7 +74,7 @@ class GeminiWrapper(BaseWrapper):
     def _process_response(self, api_response: Any) -> tuple[str, Any]:
         return api_response.text, getattr(api_response, "usage_metadata", None)
 
-    async def _create_api_call(self, parameters: dict, _max_retries: int = 3) -> Any:
+    async def _create_api_call(self, parameters: dict, _max_retries: int = 10) -> Any:
         model = parameters.pop("model", "gemini-2.5-flash")
         last_error = None
 
@@ -82,10 +85,10 @@ class GeminiWrapper(BaseWrapper):
                     model=model,
                     **parameters,
                 )
-            except _RETRYABLE_CONNECTION_ERRORS as e:
+            except (*_RETRYABLE_CONNECTION_ERRORS, *_RETRYABLE_SERVER_ERRORS) as e:
                 last_error = e
-                delay = 2**attempt
-                Logger().warning(f"[GeminiWrapper] Connection error (attempt {attempt + 1}/{_max_retries}): {e}")
+                delay = (2 ** min(attempt, 5)) + random.uniform(0, 1)
+                Logger().warning(f"[GeminiWrapper] Retryable error (attempt {attempt + 1}/{_max_retries}): {e}")
                 if attempt < _max_retries - 1:
                     await asyncio.sleep(delay)
 
