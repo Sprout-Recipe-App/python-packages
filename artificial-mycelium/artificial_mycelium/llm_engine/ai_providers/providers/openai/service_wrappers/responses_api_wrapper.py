@@ -4,8 +4,6 @@ import json
 import re
 from typing import Any, get_origin
 
-from pydantic import TypeAdapter
-
 from dev_pytopia import with_error_handling
 
 from ...shared import api_utilities
@@ -18,12 +16,7 @@ class ResponsesAPIWrapper(api_utilities.BaseWrapper):
 
     @staticmethod
     def _get_schema(fmt: Any) -> dict | None:
-        if hasattr(fmt, "model_json_schema"):
-            return fmt.model_json_schema()
-        try:
-            return TypeAdapter(fmt).json_schema()
-        except Exception:
-            return None
+        return api_utilities.BaseWrapper.get_json_schema(fmt)
 
     @staticmethod
     def _get_schema_name(response_format: Any) -> str:

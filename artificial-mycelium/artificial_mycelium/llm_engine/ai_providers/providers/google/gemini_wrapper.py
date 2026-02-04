@@ -5,7 +5,6 @@ from typing import Any
 from google import genai
 from google.genai.errors import ServerError
 import httpx
-from pydantic import TypeAdapter
 
 from dev_pytopia import Logger, with_error_handling
 
@@ -53,12 +52,7 @@ class GeminiWrapper(BaseWrapper):
 
     @staticmethod
     def _get_schema(fmt: Any) -> dict | None:
-        if hasattr(fmt, "model_json_schema"):
-            return fmt.model_json_schema()
-        try:
-            return TypeAdapter(fmt).json_schema()
-        except Exception:
-            return None
+        return BaseWrapper.get_json_schema(fmt)
 
     def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> dict[str, Any]:
         gen_config = (
@@ -76,6 +70,8 @@ class GeminiWrapper(BaseWrapper):
 
     async def _create_api_call(self, parameters: dict, _max_retries: int = 10) -> Any:
         model = parameters.pop("model", "gemini-2.5-flash")
+        parameters.pop("pricing", None)
+        parameters.pop("timeout", None)
         last_error = None
 
         for attempt in range(_max_retries):

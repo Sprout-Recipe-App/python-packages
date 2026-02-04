@@ -22,6 +22,15 @@ class BaseWrapper:
             current: next_tier for chain in (tier_chains or []) for current, next_tier in zip(chain, chain[1:])
         }
 
+    @staticmethod
+    def get_json_schema(fmt: Any) -> dict | None:
+        if hasattr(fmt, "model_json_schema"):
+            return fmt.model_json_schema()
+        try:
+            return TypeAdapter(fmt).json_schema()
+        except Exception:
+            return None
+
     async def generate_response(
         self,
         thread,

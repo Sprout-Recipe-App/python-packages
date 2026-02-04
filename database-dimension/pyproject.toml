@@ -1,36 +1,27 @@
 [build-system]
-requires = ["hatchling>=1.24"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.6,<0.7"]
+build-backend = "uv_build"
 
 [project]
 name = "database-dimension"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "pymongo>=4.9.2",
-    "motor>=3.6.1",
+    "pymongo>=4.10.0",
     "click>=8.1.7",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
-    "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-# For local development, use local path instead of git:
-[tool.uv.sources]
-dev-pytopia = { path = "../dev-pytopia", editable = true }
 
 [project.scripts]
 database-dimension = "database_dimension.terminal_functionality:main"
 
-[tool.hatch.build.targets.wheel]
-packages = ["database_dimension"]
+[tool.uv.build-backend]
+module-root = ""
 
 [tool.ruff]
 line-length = 115
-src = ["."]
+src = ["database_dimension"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]

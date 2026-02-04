@@ -3,8 +3,9 @@ from pathlib import Path
 import re
 from typing import Any
 
-from pydantic import TypeAdapter
 import yaml
+
+from ..ai_providers.providers.shared.api_utilities import BaseWrapper
 
 
 class PromptHandler:
@@ -44,6 +45,31 @@ class PromptHandler:
         return "\n".join(parts)
 
     @classmethod
+    def _compact_schema_repr(cls, schema: dict, definitions: dict) -> str:
+        if "$ref" in schema:
+            return cls._compact_schema_repr(definitions[schema["$ref"].split("/")[-1]], definitions)
+        if "enum" in schema:
+            return " | ".join(repr(v) for v in schema["enum"])
+        if combiner := next((key for key in ("allOf", "anyOf") if key in schema), None):
+            parts = [cls._compact_schema_repr(opt, definitions) for opt in schema[combiner]]
+            return " | ".join(parts)
+        type_name = schema.get("type")
+        if type_name in ("string", "number", "integer", "boolean", "null"):
+            return type_name
+        if type_name == "object" or "properties" in schema:
+            required = set(schema.get("required", []))
+            props = []
+            for k, v in schema.get("properties", {}).items():
+                key_str = k if k in required else f"{k}?"
+                val_str = cls._compact_schema_repr(v, definitions)
+                props.append(f"{key_str}: {val_str}")
+            return "{" + ", ".join(props) + "}"
+        if type_name == "array":
+            item_repr = cls._compact_schema_repr(schema.get("items", {}), definitions)
+            return f"[{item_repr}]"
+        return "any"
+
+    @classmethod
     def _build_schema_example(
         cls, schema: dict, definitions: dict = None, optional: bool = False
     ) -> dict | list | str:
@@ -52,8 +78,16 @@ class PromptHandler:
             return cls._build_schema_example(definitions[schema["$ref"].split("/")[-1]], definitions, optional)
         if combiner := next((key for key in ("allOf", "anyOf") if key in schema), None):
             options = schema[combiner]
-            enum_values = [value for option in options if "enum" in option for value in option["enum"]]
-            other_types = [option.get("type") for option in options if "type" in option and "enum" not in option]
+            resolved = [definitions[opt["$ref"].split("/")[-1]] if "$ref" in opt else opt for opt in options]
+            has_complex = any(r.get("type") == "object" or "properties" in r for r in resolved)
+            if has_complex:
+                parts = [cls._compact_schema_repr(opt, definitions) for opt in options]
+                result = f"<one of: {', '.join(parts)}>"
+                return f"{schema.get('description', '')} {result}".strip() if schema.get("description") else result
+            enum_values = [value for option in resolved if "enum" in option for value in option["enum"]]
+            other_types = [
+                option.get("type") for option in resolved if option.get("type") and "enum" not in option
+            ]
             if enum_values or other_types:
                 result = f"<one of: {', '.join([f'{repr(v)}' for v in enum_values] + other_types)}>"
                 return f"{schema.get('description', '')} {result}".strip() if schema.get("description") else result
@@ -81,13 +115,6 @@ class PromptHandler:
 
     @classmethod
     def build_prompt_with_schema(cls, prompt: str, response_format: Any = None) -> str:
-        if hasattr(response_format, "model_json_schema"):
-            schema = response_format.model_json_schema()
-        else:
-            try:
-                schema = TypeAdapter(response_format).json_schema()
-            except Exception:
-                schema = None
-        if not schema:
+        if not (schema := BaseWrapper.get_json_schema(response_format)):
             return prompt
         return f"{prompt}\n\nRespond with JSON matching this structure (omit optional keys if not needed):\n{json.dumps(cls._build_schema_example(schema), indent=2)}"
