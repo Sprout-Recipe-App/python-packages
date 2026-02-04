@@ -57,7 +57,7 @@ class LLMJob(MongoDBBaseModel):
 
     @classmethod
     async def add_workflow_summary(cls, job_id: str) -> None:
-        job = await cls.load_by_id(job_id)
+        job = await cls.find_one({"_id": job_id})
         await cls.set_step(
             job_id,
             "workflow_summary",

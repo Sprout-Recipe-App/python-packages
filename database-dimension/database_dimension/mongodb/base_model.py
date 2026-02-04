@@ -39,10 +39,6 @@ class MongoDBBaseModel(BaseModel):
         return None
 
     @classmethod
-    async def load_by_id(cls, id_value: str) -> Self | None:
-        return await cls.find_one({"_id": id_value})
-
-    @classmethod
     async def load_by_ids(cls, ids: list[str]) -> list[Self]:
         if not ids:
             return []
