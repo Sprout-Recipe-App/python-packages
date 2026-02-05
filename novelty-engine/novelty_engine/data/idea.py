@@ -4,7 +4,7 @@ from database_dimension import MongoDBBaseModel
 from pydantic import Field
 
 
-class Idea(MongoDBBaseModel, collection="ideas", db="user_data"):
+class Idea(MongoDBBaseModel, collection="ideas", database="user_data"):
     content: str
     user_id: str | None = Field(default=None, serialization_alias="userId", validation_alias="userId")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -12,7 +12,7 @@ class Idea(MongoDBBaseModel, collection="ideas", db="user_data"):
 
     @classmethod
     async def pop_unprocessed(cls) -> list["Idea"]:
-        ideas = await cls.load({"processed_at": None}, sort=[("created_at", -1)])
+        ideas = await cls.find({"processed_at": None}, sort=[("created_at", -1)])
         if ideas:
             await cls.update_many(
                 {"_id": {"$in": [idea.id for idea in ideas]}},

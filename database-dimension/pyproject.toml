@@ -8,13 +8,16 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "pymongo>=4.10.0",
-    "click>=8.1.7",
+    "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
 ]
 
+[tool.uv.sources]
+dev-pytopia = { path = "../dev-pytopia", editable = true }
+
 [project.scripts]
-database-dimension = "database_dimension.terminal_functionality:main"
+database-dimension = "database_dimension.terminal_functionality:terminal_entrypoint"
 
 [tool.uv.build-backend]
 module-root = ""
@@ -33,3 +36,6 @@ force-sort-within-sections = true
 combine-as-imports = true
 split-on-trailing-comma = true
 relative-imports-order = "closest-to-furthest"
+known-first-party = [
+    "dev_pytopia",
+]

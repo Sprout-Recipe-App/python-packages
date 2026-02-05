@@ -34,4 +34,4 @@ split-on-trailing-comma = true
 relative-imports-order = "closest-to-furthest"
 
 [project.scripts]
-dev-pytopia = "dev_pytopia.terminal_functionality:main"
+dev-pytopia = "dev_pytopia.terminal_functionality:terminal_entrypoint"

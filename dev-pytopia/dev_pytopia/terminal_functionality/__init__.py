@@ -1,9 +1,3 @@
-from ..frameworks.terminal_functionality_framework.terminal_command_registry import TerminalCommandRegistry
+from ..frameworks.terminal_functionality_framework.terminal_command_registry import create_terminal_entrypoint
 
-terminal_command_registry = TerminalCommandRegistry()
-
-__all__ = ["terminal_command_registry"]
-
-
-def main() -> None:
-    terminal_command_registry.run()
+terminal_entrypoint = create_terminal_entrypoint()

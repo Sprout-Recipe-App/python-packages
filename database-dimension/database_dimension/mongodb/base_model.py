@@ -1,93 +1,82 @@
+from datetime import timezone
 from typing import Annotated, Self
 
 from bson import ObjectId
+from bson.codec_options import CodecOptions
 from pydantic import AliasChoices, BaseModel, BeforeValidator, Field
 
-from .gateway import DatabaseGateway
+from .client import get_mongodb_client
+
+_CODEC_OPTIONS = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
 
 
 class MongoDBBaseModel(BaseModel):
-    id: Annotated[str | None, BeforeValidator(lambda v: str(v) if isinstance(v, ObjectId) else v)] = Field(
-        None, validation_alias=AliasChoices("_id", "id"), json_schema_extra={"llm_exclude": True}
-    )
+    id: Annotated[
+        str | None, BeforeValidator(lambda value: str(value) if isinstance(value, ObjectId) else value)
+    ] = Field(None, validation_alias=AliasChoices("_id", "id"), json_schema_extra={"llm_exclude": True})
 
-    def __init_subclass__(cls, collection: str = None, db: str = None, **kwargs):
+    def __init_subclass__(cls, collection: str = None, database: str = None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._collection_name, cls._db_name = collection, db
+        cls._collection_name, cls._database_name = collection, database
 
-    def to_mongodb_dictionary(self):
-        return self.model_dump(mode="json", exclude_none=True, exclude={"id"})
+    @staticmethod
+    def _collection_operation_method(operation_name: str, *, keyword_map: dict[str, str] | None = None):
+        async def operation(cls, query: dict, *args, **kwargs):
+            if keyword_map:
+                kwargs = {keyword_map.get(key, key): value for key, value in kwargs.items()}
+            return await getattr(cls.collection(), operation_name)(cls._normalize_query(query), *args, **kwargs)
+
+        return classmethod(operation)
 
     @classmethod
     def collection(cls):
-        return DatabaseGateway.get().get_collection(cls)
-
-    @classmethod
-    def _to_object_id(cls, id_value):
-        return (
-            ObjectId(id_value) if ObjectId.is_valid(id_value) and not isinstance(id_value, ObjectId) else id_value
+        return get_mongodb_client()[cls._database_name].get_collection(
+            cls._collection_name, codec_options=_CODEC_OPTIONS
         )
 
     @classmethod
-    def _normalize_query(cls, query: dict) -> dict:
-        return {**query, "_id": cls._to_object_id(query["_id"])} if "_id" in query else query
+    def _to_object_id(cls, id_value):
+        return ObjectId(id_value) if isinstance(id_value, str) and ObjectId.is_valid(id_value) else id_value
 
     @classmethod
-    async def find_one(cls, query: dict) -> Self | None:
-        if doc := await cls.collection().find_one(cls._normalize_query(query)):
-            return cls.model_validate(doc)
-        return None
+    def _normalize_query(cls, query: dict | None = None) -> dict:
+        return {**query, "_id": cls._to_object_id(query["_id"])} if query and "_id" in query else query or {}
 
     @classmethod
-    async def load_by_ids(cls, ids: list[str]) -> list[Self]:
-        if not ids:
-            return []
-        cursor = cls.collection().find({"_id": {"$in": [cls._to_object_id(i) for i in ids]}})
-        return [cls.model_validate(doc) async for doc in cursor]
+    async def find_one(cls, query: dict | None = None) -> Self | None:
+        return next(iter(await cls.find(query, limit=1)), None)
 
     @classmethod
-    async def load(
+    async def find_by_ids(cls, ids: list[str]) -> list[Self]:
+        return [] if not ids else await cls.find({"_id": {"$in": [*map(cls._to_object_id, ids)]}})
+
+    @classmethod
+    async def find(
         cls,
         query: dict | None = None,
         sort: list | None = None,
         limit: int | None = None,
-        projection: dict | None = None,
     ) -> list[Self]:
-        cursor = cls.collection().find(cls._normalize_query(query or {}), projection)
-        cursor = cursor.sort(sort) if sort else cursor
-        cursor = cursor.limit(limit) if limit else cursor
-        return [cls.model_validate(doc) async for doc in cursor]
-
-    @classmethod
-    async def load_latest(cls, query: dict | None = None) -> Self | None:
-        if doc := await cls.collection().find_one(cls._normalize_query(query or {}), sort=[("_id", -1)]):
-            return cls.model_validate(doc)
-        return None
+        cursor = cls.collection().find(cls._normalize_query(query), sort=sort or None, limit=limit or 0)
+        return [cls.model_validate(document) async for document in cursor]
 
     @classmethod
     async def insert_one(cls, data: Self) -> str:
-        result = await cls.collection().insert_one(data.to_mongodb_dictionary())
-        return str(result.inserted_id)
+        return str(
+            (
+                await cls.collection().insert_one(data.model_dump(mode="json", exclude_none=True, exclude={"id"}))
+            ).inserted_id
+        )
 
-    @classmethod
-    async def update_one(cls, query: dict, updates: dict, upsert: bool = False):
-        return await cls.collection().update_one(cls._normalize_query(query), updates, upsert=upsert)
-
-    @classmethod
-    async def update_many(cls, query: dict, updates: dict, array_filters: list | None = None):
-        options = {"array_filters": array_filters} if array_filters else {}
-        return await cls.collection().update_many(cls._normalize_query(query), updates, **options)
+    update_one = _collection_operation_method("update_one", keyword_map={"updates": "update"})
+    update_many = _collection_operation_method("update_many", keyword_map={"updates": "update"})
+    delete_one = _collection_operation_method("delete_one")
+    delete_many = _collection_operation_method("delete_many")
 
     @classmethod
     async def replace_one(cls, query: dict, replacement: Self, upsert: bool = False):
         return await cls.collection().replace_one(
-            cls._normalize_query(query), replacement.to_mongodb_dictionary(), upsert=upsert
+            cls._normalize_query(query),
+            replacement.model_dump(mode="json", exclude_none=True, exclude={"id"}),
+            upsert=upsert,
         )
-
-    @classmethod
-    async def delete_one(cls, query: dict):
-        return await cls.collection().delete_one(cls._normalize_query(query))
-
-    @classmethod
-    async def delete_many(cls, query: dict):
-        return await cls.collection().delete_many(cls._normalize_query(query))
