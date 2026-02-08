@@ -13,7 +13,7 @@ class LLMSchemaCapable:
                 fields = {
                     n: (f(i.annotation), i)
                     for n, i in t.model_fields.items()
-                    if not (i.json_schema_extra or {}).get("llm_exclude")
+                    if n != "id" and not (i.json_schema_extra or {}).get("llm_exclude")
                 }
                 return create_model(f"{t.__name__}LLM", **fields)
             return t

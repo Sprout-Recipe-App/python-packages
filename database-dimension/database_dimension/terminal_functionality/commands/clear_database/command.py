@@ -7,8 +7,12 @@ from ....mongodb.client import get_mongodb_client
 
 def main():
     load_dotenv(find_dotenv(usecwd=True))
-    client = get_mongodb_client()
-    database_names = asyncio.run(client.list_database_names())
-    drops = [client.drop_database(name) for name in database_names if name not in ("admin", "local")]
-    if drops:
-        asyncio.run(asyncio.wait(drops))
+
+    async def clear():
+        client = get_mongodb_client()
+        protected = {"admin", "config", "local"}
+        await asyncio.gather(
+            *(client.drop_database(name) for name in await client.list_database_names() if name not in protected)
+        )
+
+    asyncio.run(clear())
