@@ -69,9 +69,16 @@ class BaseWrapper:
             provider_name=metrics_context["provider_name"],
         )
 
+    _internal_config_keys = frozenset({"pricing", "timeout"})
+
     def _prepare_retry_params(self, parameters: dict, next_configuration: str) -> dict:
         preserved = {key: parameters[key] for key in self._retry_preserve_keys if key in parameters}
-        return self.configuration_parameters.get(next_configuration, {}) | preserved
+        config = {
+            k: v
+            for k, v in self.configuration_parameters.get(next_configuration, {}).items()
+            if k not in self._internal_config_keys
+        }
+        return config | preserved
 
     async def _execute_with_retry(self, parameters: dict, configuration_name: str = None) -> Any:
         if not configuration_name:

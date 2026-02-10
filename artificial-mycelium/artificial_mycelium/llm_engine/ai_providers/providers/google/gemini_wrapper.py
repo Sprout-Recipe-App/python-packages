@@ -70,8 +70,6 @@ class GeminiWrapper(BaseWrapper):
 
     async def _create_api_call(self, parameters: dict, _max_retries: int = 10) -> Any:
         model = parameters.pop("model", "gemini-2.5-flash")
-        parameters.pop("pricing", None)
-        parameters.pop("timeout", None)
         last_error = None
 
         for attempt in range(_max_retries):
