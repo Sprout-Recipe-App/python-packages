@@ -6,20 +6,19 @@ from pydantic import Field
 
 from database_dimension import MongoDBBaseModel
 
-UTCTimestamp = Annotated[datetime, Field(default_factory=lambda: datetime.now(timezone.utc))]
-
 from .llm_job_step import LLMJobStep
 from ...services.ai_performance_metrics import AIPerformanceMetrics
 
+_UTCTimestamp = Annotated[datetime, Field(default_factory=lambda: datetime.now(timezone.utc))]
+
 
 class LLMJob(MongoDBBaseModel):
-    DEFAULT_ESTIMATED_COMPLETION_SECONDS: ClassVar[float] = 60.0
     TERMINAL_STATUSES: ClassVar[list[str]] = ["completed"]
     DEFAULT_FINAL_STATUS: ClassVar[str] = "completed"
 
     user_id: str
     steps: dict[str, LLMJobStep] = {}
-    started_at: UTCTimestamp
+    started_at: _UTCTimestamp
     finished_at: datetime | None = None
 
     @property
@@ -28,7 +27,7 @@ class LLMJob(MongoDBBaseModel):
 
     def find_step_data_value(self, key: str, latest_first: bool = True) -> Any | None:
         steps = reversed(self.steps.values()) if latest_first else self.steps.values()
-        return next((v for s in steps if s.step_data and (v := s.step_data.get(key))), None)
+        return next((s.step_data[key] for s in steps if s.step_data and key in s.step_data), None)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} | {len(self.steps)} steps | ${(metrics := self.total_metrics).cost_dollars:.4f} | {metrics.elapsed_time_seconds:.2f}s"
@@ -57,36 +56,35 @@ class LLMJob(MongoDBBaseModel):
 
     @classmethod
     async def add_workflow_summary(cls, job_id: str) -> None:
-        job = await cls.find_one(job_id)
+        if not (job := await cls.find_one(job_id)):
+            return
+        now = datetime.now(timezone.utc)
+        metrics = job.total_metrics
+        metrics.elapsed_time_seconds = (now - job.started_at).total_seconds()
         await cls.set_step(
             job_id,
             "workflow_summary",
-            LLMJobStep(metrics=job.total_metrics),
+            LLMJobStep(metrics=metrics),
             status=cls.DEFAULT_FINAL_STATUS,
-            finished_at=datetime.now(timezone.utc),
+            finished_at=now,
         )
 
     @classmethod
-    async def get_average_completion_time(cls) -> float:
-        pipeline = [
-            {"$match": {"status": {"$in": cls.TERMINAL_STATUSES}}},
-            {"$sort": {"started_at": -1}},
-            {"$limit": 100},
-            {
-                "$project": {
-                    "total_time": {
-                        "$sum": {
-                            "$map": {
-                                "input": {"$objectToArray": "$steps"},
-                                "as": "s",
-                                "in": "$$s.v.metrics.elapsed_time_seconds",
-                            }
-                        }
-                    }
-                }
-            },
-            {"$group": {"_id": None, "avg_time": {"$avg": "$total_time"}}},
-        ]
-        cursor = await cls.collection().aggregate(pipeline)
-        result = await cursor.to_list(1)
-        return result[0]["avg_time"] if result else cls.DEFAULT_ESTIMATED_COMPLETION_SECONDS
+    async def get_average_completion_time(cls, source_id: str | None = None) -> float | None:
+        match: dict = {"status": {"$in": cls.TERMINAL_STATUSES}}
+        if source_id == "standard":
+            match["$or"] = [{"source_id": "standard"}, {"source_id": {"$exists": False}}]
+        elif source_id is not None:
+            match["source_id"] = source_id
+        result = await (
+            await cls.collection().aggregate(
+                [
+                    {"$match": match},
+                    {"$sort": {"started_at": -1}},
+                    {"$limit": 100},
+                    {"$project": {"total_time": "$steps.workflow_summary.metrics.elapsed_time_seconds"}},
+                    {"$group": {"_id": None, "avg_time": {"$avg": "$total_time"}}},
+                ]
+            )
+        ).to_list(1)
+        return result[0]["avg_time"] if result else None
