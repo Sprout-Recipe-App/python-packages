@@ -68,17 +68,18 @@ class GeminiWrapper(BaseWrapper):
     def _process_response(self, api_response: Any) -> tuple[str, Any]:
         return api_response.text, getattr(api_response, "usage_metadata", None)
 
-    async def _create_api_call(self, parameters: dict, _max_retries: int = 10) -> Any:
+    async def _create_api_call(self, parameters: dict, _max_retries: int = 10) -> tuple[Any, int]:
         model = parameters.pop("model", "gemini-2.5-flash")
         last_error = None
 
         for attempt in range(_max_retries):
             try:
-                return await asyncio.to_thread(
+                response = await asyncio.to_thread(
                     self.client.models.generate_content,
                     model=model,
                     **parameters,
                 )
+                return response, attempt + 1
             except (*_RETRYABLE_CONNECTION_ERRORS, *_RETRYABLE_SERVER_ERRORS) as e:
                 last_error = e
                 delay = (2 ** min(attempt, 5)) + random.uniform(0, 1)

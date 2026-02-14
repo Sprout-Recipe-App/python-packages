@@ -38,34 +38,6 @@ class OpenAIProvider(OpenAICompatibleProvider):
         return await self._image_api.edit(self.model_name, image, prompt, **kwargs) if self._image_api else None
 
     async def deep_research(self, thread, tools: list[dict] = None, **kwargs):
-        """
-        Run deep research using o3-deep-research model.
-
-        Args:
-            thread: Thread containing the research prompt
-            tools: List of tools to use. At least one data source required:
-                - {"type": "web_search_preview"} - Search the web (default)
-                - {"type": "file_search", "vector_store_ids": ["vs_..."]} - Search vector stores
-                - {"type": "code_interpreter", "container": {"type": "auto"}} - Run code analysis
-            **kwargs: Additional parameters:
-                - instructions: System instructions for the research
-                - max_tool_calls: Limit tool calls to control cost/latency
-
-        Returns:
-            Tuple of (result_dict, usage) where result_dict contains:
-            - output_text: The final research report with inline citations
-            - annotations: List of {url, title, start_index, end_index} for citations
-            - tool_calls: List of searches/code executions made
-            - status: Final status (completed, failed, etc.)
-
-        Example:
-            result, usage = await provider.deep_research(
-                thread,
-                tools=[{"type": "web_search_preview"}],
-                instructions="Be analytical, include statistics and citations."
-            )
-            print(result["output_text"])
-        """
         if not self._deep_research_api:
             return None, None
 

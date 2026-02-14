@@ -1,6 +1,5 @@
 from typing import Any
 
-from .providers.deepseek.deepseek_provider import DeepSeekProvider
 from .providers.google.google_provider import GoogleProvider
 from .providers.openai.openai_provider import OpenAIProvider
 from ..data_models.thread.thread import Thread
@@ -8,7 +7,7 @@ from ..services.prompt_handler import PromptHandler
 
 
 class AI:
-    _providers = {"openai": OpenAIProvider, "deepseek": DeepSeekProvider, "google": GoogleProvider}
+    _providers = {"openai": OpenAIProvider, "google": GoogleProvider}
 
     def __init__(self, provider: str = "openai", name: str = "4o", **kwargs):
         self._provider = self._providers[provider](name, **kwargs)
@@ -29,11 +28,15 @@ class AI:
         return getattr(self._provider, "configuration", {})
 
     async def get_response(self, thread, log_thread=False, **kwargs):
-        metrics_context = {
-            "pricing": self.configuration.get("pricing"),
-            "model_name": self.name,
-            "provider_name": self.provider_name.replace("Provider", ""),
-        } if kwargs.pop("with_metrics", False) else None
+        metrics_context = (
+            {
+                "pricing": self.configuration.get("pricing"),
+                "model_name": self.name,
+                "provider_name": self.provider_name.replace("Provider", ""),
+            }
+            if kwargs.pop("with_metrics", False)
+            else None
+        )
 
         return await self._provider._api_wrapper.generate_response(
             thread,

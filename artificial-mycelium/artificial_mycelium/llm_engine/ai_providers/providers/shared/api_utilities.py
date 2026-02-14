@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from dev_pytopia import Logger
 
 from ....data_models.thread.thread import Thread
-from ....services.ai_performance_metrics import AIPerformanceMetrics
+from ....services.ai_performance_metrics import AIPerformanceMetrics, record_metrics
 
 DEFAULT_TIMEOUT_CONFIG = {"connect": 10.0, "read": None, "write": 10.0, "pool": 5.0}
 
@@ -46,7 +46,8 @@ class BaseWrapper:
         if log_thread and (messages := prepared_request.get("messages")):
             Logger().info(Thread.from_dicts(messages).get_printable_representation())
 
-        text, usage = self._process_response(await self._execute_with_retry(prepared_request, configuration_name))
+        response, api_calls = await self._execute_with_retry(prepared_request, configuration_name)
+        text, usage = self._process_response(response)
         result = (
             text
             if not response_format
@@ -61,13 +62,16 @@ class BaseWrapper:
         if not metrics_context:
             return result, usage
 
-        return result, AIPerformanceMetrics.from_usage(
+        metrics = AIPerformanceMetrics.from_usage(
             usage,
             metrics_context["pricing"],
             elapsed,
+            api_calls=api_calls,
             model_name=metrics_context["model_name"],
             provider_name=metrics_context["provider_name"],
         )
+        record_metrics(metrics)
+        return result, metrics
 
     _internal_config_keys = frozenset({"pricing", "timeout"})
 
@@ -80,20 +84,23 @@ class BaseWrapper:
         }
         return config | preserved
 
-    async def _execute_with_retry(self, parameters: dict, configuration_name: str = None) -> Any:
+    async def _execute_with_retry(self, parameters: dict, configuration_name: str = None) -> tuple[Any, int]:
         if not configuration_name:
             return await self._create_api_call(parameters)
 
+        total_calls = 0
         backoff_delay = None
         while True:
             configuration = self.configuration_parameters[configuration_name]
             parameters["model"] = configuration.get("model", configuration_name)
 
             try:
-                return await asyncio.wait_for(
+                response, calls = await asyncio.wait_for(
                     self._create_api_call(parameters), configuration.get("timeout", 120.0)
                 )
+                return response, total_calls + calls
             except asyncio.TimeoutError:
+                total_calls += 1
                 backoff_delay = 1.0 if backoff_delay is None else backoff_delay * 2
                 configuration_name = self.configuration_tiers.get(configuration_name, configuration_name)
                 parameters = self._prepare_retry_params(parameters, configuration_name)

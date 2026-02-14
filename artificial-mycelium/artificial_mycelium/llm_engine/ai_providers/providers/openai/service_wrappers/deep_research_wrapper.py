@@ -30,7 +30,7 @@ class DeepResearchWrapper(api_utilities.BaseWrapper):
             **kwargs,
         }
 
-        api_response = await self._execute_with_retry(parameters, configuration_name)
+        api_response, _api_calls = await self._execute_with_retry(parameters, configuration_name)
 
         result, usage = self._process_response(api_response)
 
@@ -76,11 +76,11 @@ class DeepResearchWrapper(api_utilities.BaseWrapper):
 
         return result, getattr(api_response, "usage", None)
 
-    async def _create_api_call(self, parameters: dict) -> Any:
+    async def _create_api_call(self, parameters: dict) -> tuple[Any, int]:
         response = await self.client.responses.create(**parameters)
 
         while response.status in ("queued", "in_progress"):
             await asyncio.sleep(5)
             response = await self.client.responses.retrieve(response.id)
 
-        return response
+        return response, 1

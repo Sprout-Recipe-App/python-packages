@@ -11,7 +11,7 @@ from .llm_engine.data_models.thread.supports.image_message.image_message import 
 )
 from .llm_engine.data_models.thread.supports.text_message import TextMessage
 from .llm_engine.data_models.thread.thread import Thread
-from .llm_engine.services.ai_performance_metrics import AIPerformanceMetrics
+from .llm_engine.services.ai_performance_metrics import AIPerformanceMetrics, collect_metrics, record_metrics
 from .llm_engine.services.prompt_handler import PromptHandler
 from .llm_schema_capable import LLMSchemaCapable
 
@@ -28,4 +28,6 @@ __all__ = [
     "ImageMessage",
     "TextMessage",
     "PromptHandler",
+    "collect_metrics",
+    "record_metrics",
 ]

@@ -1,6 +1,25 @@
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, Self
 
 from pydantic import BaseModel
+
+_collector: ContextVar[list | None] = ContextVar("_ai_metrics", default=None)
+
+
+@contextmanager
+def collect_metrics():
+    collected = []
+    token = _collector.set(collected)
+    try:
+        yield collected
+    finally:
+        _collector.reset(token)
+
+
+def record_metrics(metrics):
+    if metrics and (c := _collector.get(None)) is not None:
+        c.append(metrics)
 
 
 class AIPerformanceMetrics(BaseModel):
@@ -19,12 +38,19 @@ class AIPerformanceMetrics(BaseModel):
         return f"Metrics(time={self.elapsed_time_seconds:.2f}s, cost=${self.cost_dollars:.6f}, tokens={self.input_tokens + self.output_tokens}, calls={self.api_calls})"
 
     @classmethod
-    def aggregate(cls, items: list["AIPerformanceMetrics"]) -> "AIPerformanceMetrics":
-        numeric = [k for k, v in cls.model_fields.items() if v.annotation in (int, float)]
+    def aggregate(
+        cls, items: list["AIPerformanceMetrics"], *, elapsed_time: float | None = None
+    ) -> "AIPerformanceMetrics":
+        summed = [
+            k for k, v in cls.model_fields.items() if v.annotation in (int, float) and k != "elapsed_time_seconds"
+        ]
         return cls(
+            elapsed_time_seconds=elapsed_time
+            if elapsed_time is not None
+            else sum(i.elapsed_time_seconds for i in items),
             model_name=items[0].model_name if items else None,
             provider_name=items[0].provider_name if items else None,
-            **{f: sum(getattr(i, f) for i in items) for f in numeric},
+            **{f: sum(getattr(i, f) for i in items) for f in summed},
         )
 
     @classmethod

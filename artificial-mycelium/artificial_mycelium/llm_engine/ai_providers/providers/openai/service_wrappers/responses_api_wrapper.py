@@ -77,9 +77,9 @@ class ResponsesAPIWrapper(api_utilities.BaseWrapper):
             text = json.dumps(json.loads(text).get("items", []))
         return text, getattr(api_response, "usage", None)
 
-    async def _create_api_call(self, parameters: dict) -> Any:
+    async def _create_api_call(self, parameters: dict) -> tuple[Any, int]:
         response = await self.client.responses.create(**parameters)
         while response.status in ("queued", "in_progress"):
             await asyncio.sleep(2)
             response = await self.client.responses.retrieve(response.id)
-        return response
+        return response, 1
