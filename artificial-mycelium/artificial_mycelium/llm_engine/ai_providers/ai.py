@@ -25,26 +25,10 @@ class AI:
 
     @property
     def configuration(self) -> dict:
-        return getattr(self._provider, "configuration", {})
+        return self._provider.configuration
 
     async def get_response(self, thread, log_thread=False, **kwargs):
-        metrics_context = (
-            {
-                "pricing": self.configuration.get("pricing"),
-                "model_name": self.name,
-                "provider_name": self.provider_name.replace("Provider", ""),
-            }
-            if kwargs.pop("with_metrics", False)
-            else None
-        )
-
-        return await self._provider._api_wrapper.generate_response(
-            thread,
-            configuration_name=self.name,
-            log_thread=log_thread,
-            metrics_context=metrics_context,
-            **kwargs,
-        )
+        return await self._provider.get_response(thread, log_thread=log_thread, **kwargs)
 
     async def get_response_with_prompt(
         self,

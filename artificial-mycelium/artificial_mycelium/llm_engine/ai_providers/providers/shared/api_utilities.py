@@ -34,38 +34,30 @@ class BaseWrapper:
     async def generate_response(
         self,
         thread,
-        configuration_name: str = None,
-        response_format: Any = None,
-        log_thread: bool = False,
-        metrics_context: dict = None,
+        configuration_name=None,
+        response_format=None,
+        log_thread=False,
+        metrics_context=None,
         **kwargs,
     ):
         start_time = time.time()
-
         prepared_request = self._prepare_request(thread, response_format, **kwargs)
         if log_thread and (messages := prepared_request.get("messages")):
             Logger().info(Thread.from_dicts(messages).get_printable_representation())
 
         response, api_calls = await self._execute_with_retry(prepared_request, configuration_name)
         text, usage = self._process_response(response)
-        result = (
-            text
-            if not response_format
-            else (
-                response_format.model_validate_json(text)
-                if hasattr(response_format, "model_validate_json")
-                else TypeAdapter(response_format).validate_json(text)
-            )
+        validate = getattr(response_format, "model_validate_json", None) or (
+            lambda t: TypeAdapter(response_format).validate_json(t)
         )
-        elapsed = time.time() - start_time
+        result = validate(text) if response_format else text
 
         if not metrics_context:
             return result, usage
-
         metrics = AIPerformanceMetrics.from_usage(
             usage,
             metrics_context["pricing"],
-            elapsed,
+            time.time() - start_time,
             api_calls=api_calls,
             model_name=metrics_context["model_name"],
             provider_name=metrics_context["provider_name"],
@@ -75,21 +67,19 @@ class BaseWrapper:
 
     _internal_config_keys = frozenset({"pricing", "timeout"})
 
-    def _prepare_retry_params(self, parameters: dict, next_configuration: str) -> dict:
-        preserved = {key: parameters[key] for key in self._retry_preserve_keys if key in parameters}
+    def _prepare_retry_params(self, parameters: dict, next_config: str) -> dict:
         config = {
             k: v
-            for k, v in self.configuration_parameters.get(next_configuration, {}).items()
+            for k, v in self.configuration_parameters.get(next_config, {}).items()
             if k not in self._internal_config_keys
         }
-        return config | preserved
+        return config | {k: parameters[k] for k in self._retry_preserve_keys if k in parameters}
 
     async def _execute_with_retry(self, parameters: dict, configuration_name: str = None) -> tuple[Any, int]:
         if not configuration_name:
             return await self._create_api_call(parameters)
 
-        total_calls = 0
-        backoff_delay = None
+        total_calls, backoff_delay = 0, None
         while True:
             configuration = self.configuration_parameters[configuration_name]
             parameters["model"] = configuration.get("model", configuration_name)
@@ -101,7 +91,7 @@ class BaseWrapper:
                 return response, total_calls + calls
             except asyncio.TimeoutError:
                 total_calls += 1
-                backoff_delay = 1.0 if backoff_delay is None else backoff_delay * 2
+                backoff_delay = (backoff_delay or 0.5) * 2
                 configuration_name = self.configuration_tiers.get(configuration_name, configuration_name)
                 parameters = self._prepare_retry_params(parameters, configuration_name)
                 Logger().info(f"Timeout, retrying with {configuration_name} in {backoff_delay:.1f}s")

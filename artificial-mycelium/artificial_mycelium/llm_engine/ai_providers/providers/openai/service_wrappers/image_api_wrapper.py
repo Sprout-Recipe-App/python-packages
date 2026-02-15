@@ -83,7 +83,6 @@ class ImageAPIWrapper:
         )
 
     def _prepare_image_file(self, image: str | bytes | Path, default_name: str = "image.png"):
-        """Returns (file_object, needs_close) tuple."""
         if isinstance(image, (str, Path)) and Path(image).exists():
             return open(image, "rb"), True
         if isinstance(image, bytes):

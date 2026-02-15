@@ -1,16 +1,20 @@
 from functools import cached_property
 
+import httpx
+from openai import AsyncOpenAI
+
 from dev_pytopia import with_error_handling
 
 from . import constants
 from .service_wrappers.deep_research_wrapper import DeepResearchWrapper
 from .service_wrappers.image_api_wrapper import ImageAPIWrapper
 from .service_wrappers.responses_api_wrapper import ResponsesAPIWrapper
-from ..shared.openai_compatible_provider import OpenAICompatibleProvider
+from ..shared.api_utilities import DEFAULT_TIMEOUT_CONFIG
+from ...ai_provider_interface import AIProviderInterface
 
 
 @with_error_handling()
-class OpenAIProvider(OpenAICompatibleProvider):
+class OpenAIProvider(AIProviderInterface):
     _wrapper_class = ResponsesAPIWrapper
     _tier_chains = [
         constants.TEXT_GENERATION_TIERS,
@@ -22,6 +26,9 @@ class OpenAIProvider(OpenAICompatibleProvider):
         super().__init__(
             configuration_name, constants.MODEL_CONFIGURATIONS, constants.API_KEY_ENVIRONMENT_VARIABLE_NAME
         )
+
+    def _initialize_client(self, api_key):
+        return AsyncOpenAI(api_key=api_key, timeout=httpx.Timeout(**DEFAULT_TIMEOUT_CONFIG))
 
     @cached_property
     def _image_api(self):

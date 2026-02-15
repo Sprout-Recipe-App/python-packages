@@ -13,19 +13,15 @@ from ...shared import api_utilities
 class ResponsesAPIWrapper(api_utilities.BaseWrapper):
     _retry_preserve_keys = ("input", "text")
     _unwrap_items: bool = False
+    _get_schema = staticmethod(api_utilities.BaseWrapper.get_json_schema)
 
     @staticmethod
-    def _get_schema(fmt: Any) -> dict | None:
-        return api_utilities.BaseWrapper.get_json_schema(fmt)
-
-    @staticmethod
-    def _get_schema_name(response_format: Any) -> str:
-        if hasattr(response_format, "__name__"):
-            return response_format.__name__
-        if get_origin(response_format) is list:
-            args = getattr(response_format, "__args__", ())
-            if args and hasattr(args[0], "__name__"):
-                return f"{args[0].__name__}List"
+    def _get_schema_name(fmt: Any) -> str:
+        if hasattr(fmt, "__name__"):
+            return fmt.__name__
+        args = getattr(fmt, "__args__", ())
+        if get_origin(fmt) is list and args and hasattr(args[0], "__name__"):
+            return f"{args[0].__name__}List"
         return "Response"
 
     @classmethod
@@ -43,15 +39,15 @@ class ResponsesAPIWrapper(api_utilities.BaseWrapper):
                 stack.extend(item)
 
         if schema.get("type") == "array":
-            definitions = schema.pop("$defs", None) or schema.pop("definitions", None)
+            defs = schema.pop("$defs", None) or schema.pop("definitions", None)
             schema = {
                 "type": "object",
                 "properties": {"items": schema},
                 "required": ["items"],
                 "additionalProperties": False,
             }
-            if definitions:
-                schema["$defs"] = definitions
+            if defs:
+                schema["$defs"] = defs
 
         name = re.sub(r"[^a-zA-Z0-9_-]", "_", cls._get_schema_name(response_format))
         return {"format": {"type": "json_schema", "name": name, "strict": True, "schema": schema}}
@@ -64,15 +60,15 @@ class ResponsesAPIWrapper(api_utilities.BaseWrapper):
         return parameters
 
     def _process_response(self, api_response: Any) -> tuple[str, Any]:
-        text = getattr(api_response, "output_text", None)
-        if not text:
-            for output in getattr(api_response, "output", ()):
-                for item in output.content:
-                    if hasattr(item, "text"):
-                        text = item.text
-                        break
-                if text:
-                    break
+        text = getattr(api_response, "output_text", None) or next(
+            (
+                item.text
+                for out in getattr(api_response, "output", ())
+                for item in out.content
+                if hasattr(item, "text")
+            ),
+            None,
+        )
         if self._unwrap_items and text:
             text = json.dumps(json.loads(text).get("items", []))
         return text, getattr(api_response, "usage", None)
