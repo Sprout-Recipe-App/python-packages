@@ -38,7 +38,7 @@ class GoogleProvider(BaseProvider):
             }
         return {k: cls._sanitize_schema(v, max_enum) for k, v in obj.items()}
 
-    def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> dict[str, Any]:
+    def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> tuple[dict[str, Any], dict]:
         schema = self._sanitize_schema(get_json_schema(response_format))
         return {
             "contents": thread.get_concatenated_content(),
@@ -47,7 +47,7 @@ class GoogleProvider(BaseProvider):
             )
             if schema
             else None,
-        }
+        }, {}
 
     def _process_response(self, api_response: Any) -> tuple[str, Any]:
         return api_response.text, getattr(api_response, "usage_metadata", None)

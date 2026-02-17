@@ -29,12 +29,13 @@ _CONFIGS = [
 
 
 def _build(name, model, effort, price_in, price_out, timeout, background=False):
-    config = {"model": model, "pricing": {"input": price_in, "output": price_out}, "timeout": timeout}
-    if effort:
-        config["reasoning"] = {"effort": effort}
-    if background:
-        config["background"] = True
-    return name, config
+    return name, {
+        "model": model,
+        "pricing": {"input": price_in, "output": price_out},
+        "timeout": timeout,
+        **({"reasoning": {"effort": effort}} if effort else {}),
+        **({"background": True} if background else {}),
+    }
 
 
 _TEXT_GENERATION_TIERS = [name for name, *_ in _CONFIGS]
@@ -54,55 +55,56 @@ class OpenAIProvider(BaseProvider):
     def _initialize_client(self, api_key):
         return AsyncOpenAI(api_key=api_key, timeout=httpx.Timeout(**_DEFAULT_TIMEOUT_CONFIG))
 
-    def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> dict[str, Any]:
+    def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> tuple[dict[str, Any], dict]:
         params = {"input": thread.get_concatenated_content(), **kwargs}
-        if response_format:
-            if get_origin(response_format) is list:
-                params["_post_process"] = {"unwrap_items": True}
-
-            schema = get_json_schema(response_format)
-            if schema:
-                stack = [schema]
-                while stack:
-                    item = stack.pop()
-                    if isinstance(item, dict):
-                        if item.get("type") == "object":
-                            item.update(
-                                additionalProperties=False, required=list(item.get("properties", {}).keys())
-                            )
-                        stack.extend(item.values())
-                    elif isinstance(item, list):
-                        stack.extend(item)
-
-                if schema.get("type") == "array":
-                    defs = schema.pop("$defs", None) or schema.pop("definitions", None)
-                    schema = {
-                        "type": "object",
-                        "properties": {"items": schema},
-                        "required": ["items"],
-                        "additionalProperties": False,
-                        **({"$defs": defs} if defs else {}),
-                    }
-
-                args = getattr(response_format, "__args__", ())
-                name = getattr(response_format, "__name__", None) or (
-                    f"{args[0].__name__}List"
-                    if get_origin(response_format) is list and args and hasattr(args[0], "__name__")
-                    else "Response"
-                )
-                sanitized = "".join(c if c.isalnum() or c in "_-" else "_" for c in name)
-                params["text"] = {
-                    "format": {"type": "json_schema", "name": sanitized, "strict": True, "schema": schema}
-                }
-            else:
-                params["text"] = {"format": response_format}
-        return params
+        post_process = {}
+        if not response_format:
+            return params, post_process
+        if get_origin(response_format) is list:
+            post_process = {"unwrap_items": True}
+        schema = get_json_schema(response_format)
+        if not schema:
+            params["text"] = {"format": response_format}
+            return params, post_process
+        stack = [schema]
+        while stack:
+            item = stack.pop()
+            if isinstance(item, dict):
+                if item.get("type") == "object":
+                    item.update(additionalProperties=False, required=list(item.get("properties", {}).keys()))
+                stack.extend(item.values())
+            elif isinstance(item, list):
+                stack.extend(item)
+        if schema.get("type") == "array":
+            defs = schema.pop("$defs", None) or schema.pop("definitions", None)
+            schema = {
+                "type": "object",
+                "properties": {"items": schema},
+                "required": ["items"],
+                "additionalProperties": False,
+                **({"$defs": defs} if defs else {}),
+            }
+        args = getattr(response_format, "__args__", ())
+        name = getattr(response_format, "__name__", None) or (
+            f"{args[0].__name__}List"
+            if get_origin(response_format) is list and args and hasattr(args[0], "__name__")
+            else "Response"
+        )
+        params["text"] = {
+            "format": {
+                "type": "json_schema",
+                "strict": True,
+                "schema": schema,
+                "name": "".join(c if c.isalnum() or c in "_-" else "_" for c in name),
+            }
+        }
+        return params, post_process
 
     def _process_response(self, api_response: Any, *, unwrap_items=False) -> tuple[str, Any]:
         text = api_response.output_text
-        if unwrap_items and text:
-            text = json.dumps(json.loads(text).get("items", []))
-        return text, api_response.usage
+        return (
+            json.dumps(json.loads(text).get("items", [])) if unwrap_items and text else text
+        ), api_response.usage
 
     async def _create_api_call(self, parameters: dict):
         response = await self.client.responses.create(**parameters)
