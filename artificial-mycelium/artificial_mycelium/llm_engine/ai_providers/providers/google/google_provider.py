@@ -6,17 +6,21 @@ import httpx
 
 from dev_pytopia import with_error_handling
 
-from ..shared.api_utilities import BaseProvider
+from ..shared.base_provider import BaseProvider
 from ....schema_utils import get_json_schema
 
 _MODEL_CONFIGURATIONS = {
     "3-flash": {"model": "gemini-3-flash-preview", "pricing": {"input": 0.50, "output": 3.00}, "timeout": 360.0},
+    "2.5-flash-lite": {
+        "model": "gemini-2.5-flash-lite",
+        "pricing": {"input": 0.10, "output": 0.40},
+        "timeout": 60.0,
+    },
 }
 
 
 @with_error_handling()
 class GoogleProvider(BaseProvider):
-    _tier_chains = [["3-flash"]]
     _retryable_errors = (httpx.ConnectError, httpx.RemoteProtocolError, ConnectionResetError, ServerError)
     _max_retries = 10
 
@@ -52,5 +56,5 @@ class GoogleProvider(BaseProvider):
     def _process_response(self, api_response: Any) -> tuple[str, Any]:
         return api_response.text, getattr(api_response, "usage_metadata", None)
 
-    async def _create_api_call(self, parameters: dict) -> tuple[Any, int]:
-        return await self.client.aio.models.generate_content(**parameters), 1
+    async def _create_api_call(self, parameters: dict):
+        return await self.client.aio.models.generate_content(**parameters)

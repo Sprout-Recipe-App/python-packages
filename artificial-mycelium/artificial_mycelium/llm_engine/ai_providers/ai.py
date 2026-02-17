@@ -1,3 +1,5 @@
+from dev_pytopia import Logger
+
 from .providers.google.google_provider import GoogleProvider
 from .providers.openai.openai_provider import OpenAIProvider
 from ..data_models.thread.thread import Thread
@@ -20,6 +22,11 @@ class AI:
     @property
     def provider_name(self):
         return type(self._provider).__name__
+
+    async def get_response(self, thread, log_thread=False, **kwargs):
+        if log_thread:
+            Logger().info(thread.get_printable_representation())
+        return await self._provider.get_response(thread, **kwargs)
 
     async def get_response_with_prompt(
         self, *, prompt_location, placeholder_values=None, role="system", response_format=None, **kwargs

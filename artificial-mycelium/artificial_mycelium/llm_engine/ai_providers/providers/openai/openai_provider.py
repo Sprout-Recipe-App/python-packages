@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 
 from dev_pytopia import with_error_handling
 
-from ..shared.api_utilities import BaseProvider
+from ..shared.base_provider import BaseProvider
 from ....schema_utils import get_json_schema
 
 _CONFIGS = [
@@ -38,7 +38,6 @@ def _build(name, model, effort, price_in, price_out, timeout, background=False):
     }
 
 
-_TEXT_GENERATION_TIERS = [name for name, *_ in _CONFIGS]
 _MODEL_CONFIGURATIONS = dict(_build(*row) for row in _CONFIGS)
 _DEFAULT_TIMEOUT_CONFIG = {"connect": 10.0, "read": None, "write": 10.0, "pool": 5.0}
 _API_KEY_ENVIRONMENT_VARIABLE_NAME = "OPENAI_API_KEY"
@@ -46,9 +45,6 @@ _API_KEY_ENVIRONMENT_VARIABLE_NAME = "OPENAI_API_KEY"
 
 @with_error_handling()
 class OpenAIProvider(BaseProvider):
-    _retry_preserve_keys = ("input", "text")
-    _tier_chains = [_TEXT_GENERATION_TIERS]
-
     def __init__(self, configuration_name):
         super().__init__(configuration_name, _MODEL_CONFIGURATIONS, _API_KEY_ENVIRONMENT_VARIABLE_NAME)
 
@@ -110,4 +106,4 @@ class OpenAIProvider(BaseProvider):
         response = await self.client.responses.create(**parameters)
         while response.status in ("queued", "in_progress"):
             response = await asyncio.sleep(2) or await self.client.responses.retrieve(response.id)
-        return response, 1
+        return response

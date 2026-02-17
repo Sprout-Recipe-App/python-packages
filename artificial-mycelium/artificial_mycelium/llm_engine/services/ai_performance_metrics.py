@@ -18,6 +18,7 @@ class AIPerformanceMetrics(BaseModel):
     api_calls: int = 0
     model_name: str | None = None
     provider_name: str | None = None
+    retry_errors: list[str] = []
 
     def __repr__(self) -> str:
         return f"Metrics(time={self.elapsed_time_seconds:.2f}s, cost=${self.cost_dollars:.6f}, tokens={self.input_tokens + self.output_tokens}, calls={self.api_calls})"
@@ -32,6 +33,7 @@ class AIPerformanceMetrics(BaseModel):
             else sum(i.elapsed_time_seconds for i in items),
             model_name=items[0].model_name if items else None,
             provider_name=items[0].provider_name if items else None,
+            retry_errors=[e for i in items for e in i.retry_errors],
             **{
                 k: sum(getattr(i, k) for i in items)
                 for k, v in cls.model_fields.items()
