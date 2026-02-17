@@ -1,6 +1,5 @@
 import shutil
 
-from .supports.image_message.image_message import ImageMessage
 from .supports.text_message import TextMessage
 
 
@@ -28,10 +27,7 @@ class Thread:
         return t
 
     def add_message(self, role, text="", **kwargs):
-        image_data = kwargs.get("image_data")
-        message_class = ImageMessage if image_data is not None else TextMessage
-        message_kwargs = {"image_data": image_data} if image_data is not None else {}
-        self.messages.append(message_class(role=role, text=text, **message_kwargs))
+        self.messages.append(TextMessage(role=role, text=text))
         return self
 
     def get_printable_representation(self):

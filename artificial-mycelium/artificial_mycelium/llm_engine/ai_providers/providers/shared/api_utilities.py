@@ -1,4 +1,7 @@
+from abc import abstractmethod
 import asyncio
+import os
+import random
 import time
 from typing import Any
 
@@ -9,90 +12,88 @@ from dev_pytopia import Logger
 from ....data_models.thread.thread import Thread
 from ....services.ai_performance_metrics import AIPerformanceMetrics, record_metrics
 
-DEFAULT_TIMEOUT_CONFIG = {"connect": 10.0, "read": None, "write": 10.0, "pool": 5.0}
 
-
-class BaseWrapper:
+class BaseProvider:
     _retry_preserve_keys: tuple[str, ...] = ()
+    _retryable_errors: tuple[type[Exception], ...] = ()
+    _tier_chains: list[list[str]] = []
+    _internal_config_keys = frozenset({"pricing", "timeout"})
+    _max_retries: int = 5
 
-    def __init__(self, client: Any, model_configurations: dict = None, tier_chains=None):
-        self.client = client
-        self.configuration_parameters = model_configurations or {}
-        self.configuration_tiers = {
-            current: next_tier for chain in (tier_chains or []) for current, next_tier in zip(chain, chain[1:])
+    def __init__(self, configuration_name, model_configurations, api_key_env_var):
+        self.configuration_name = configuration_name
+        self.configuration = model_configurations.get(configuration_name, {})
+        self.model_name = self.configuration.get("model", configuration_name)
+        self.client = self._initialize_client(api_key) if (api_key := os.getenv(api_key_env_var)) else None
+        self._model_configurations = model_configurations
+        self._configuration_tiers = {
+            current: next_tier for chain in self._tier_chains for current, next_tier in zip(chain, chain[1:])
         }
 
-    @staticmethod
-    def get_json_schema(fmt: Any) -> dict | None:
-        if hasattr(fmt, "model_json_schema"):
-            return fmt.model_json_schema()
-        try:
-            return TypeAdapter(fmt).json_schema()
-        except Exception:
-            return None
-
-    async def generate_response(
-        self,
-        thread,
-        configuration_name=None,
-        response_format=None,
-        log_thread=False,
-        metrics_context=None,
-        **kwargs,
-    ):
+    async def get_response(self, thread, log_thread=False, **kwargs):
+        with_metrics = kwargs.pop("with_metrics", False)
+        response_format = kwargs.pop("response_format", None)
         start_time = time.time()
         prepared_request = self._prepare_request(thread, response_format, **kwargs)
+        post_process = prepared_request.pop("_post_process", {})
         if log_thread and (messages := prepared_request.get("messages")):
             Logger().info(Thread.from_dicts(messages).get_printable_representation())
 
-        response, api_calls = await self._execute_with_retry(prepared_request, configuration_name)
-        text, usage = self._process_response(response)
-        validate = getattr(response_format, "model_validate_json", None) or (
-            lambda t: TypeAdapter(response_format).validate_json(t)
+        response, api_calls = await self._execute_with_retry(prepared_request)
+        text, usage = self._process_response(response, **post_process)
+        result = (
+            (getattr(response_format, "model_validate_json", None) or TypeAdapter(response_format).validate_json)(
+                text
+            )
+            if response_format
+            else text
         )
-        result = validate(text) if response_format else text
+        if with_metrics:
+            usage = AIPerformanceMetrics.from_usage(
+                usage,
+                self.configuration.get("pricing"),
+                time.time() - start_time,
+                api_calls=api_calls,
+                model_name=self.configuration_name,
+                provider_name=type(self).__name__.replace("Provider", ""),
+            )
+            record_metrics(usage)
+        return result, usage
 
-        if not metrics_context:
-            return result, usage
-        metrics = AIPerformanceMetrics.from_usage(
-            usage,
-            metrics_context["pricing"],
-            time.time() - start_time,
-            api_calls=api_calls,
-            model_name=metrics_context["model_name"],
-            provider_name=metrics_context["provider_name"],
-        )
-        record_metrics(metrics)
-        return result, metrics
-
-    _internal_config_keys = frozenset({"pricing", "timeout"})
-
-    def _prepare_retry_params(self, parameters: dict, next_config: str) -> dict:
-        config = {
-            k: v
-            for k, v in self.configuration_parameters.get(next_config, {}).items()
-            if k not in self._internal_config_keys
-        }
-        return config | {k: parameters[k] for k in self._retry_preserve_keys if k in parameters}
-
-    async def _execute_with_retry(self, parameters: dict, configuration_name: str = None) -> tuple[Any, int]:
-        if not configuration_name:
-            return await self._create_api_call(parameters)
-
-        total_calls, backoff_delay = 0, None
+    async def _execute_with_retry(self, parameters: dict) -> tuple[Any, int]:
+        retryable = (asyncio.TimeoutError, *self._retryable_errors)
+        total_calls, config_name, retries = 0, self.configuration_name, 0
         while True:
-            configuration = self.configuration_parameters[configuration_name]
-            parameters["model"] = configuration.get("model", configuration_name)
-
+            config = self._model_configurations[config_name]
+            parameters["model"] = config.get("model", config_name)
             try:
                 response, calls = await asyncio.wait_for(
-                    self._create_api_call(parameters), configuration.get("timeout", 120.0)
+                    self._create_api_call(parameters), config.get("timeout", 120.0)
                 )
                 return response, total_calls + calls
-            except asyncio.TimeoutError:
+            except retryable as e:
+                retries += 1
+                if retries >= self._max_retries:
+                    raise
                 total_calls += 1
-                backoff_delay = (backoff_delay or 0.5) * 2
-                configuration_name = self.configuration_tiers.get(configuration_name, configuration_name)
-                parameters = self._prepare_retry_params(parameters, configuration_name)
-                Logger().info(f"Timeout, retrying with {configuration_name} in {backoff_delay:.1f}s")
-                await asyncio.sleep(backoff_delay)
+                if isinstance(e, asyncio.TimeoutError):
+                    config_name = self._configuration_tiers.get(config_name, config_name)
+                    cfg = self._model_configurations.get(config_name, {})
+                    parameters = {k: v for k, v in cfg.items() if k not in self._internal_config_keys} | {
+                        k: parameters[k] for k in self._retry_preserve_keys if k in parameters
+                    }
+                delay = min(2**retries, 32) + random.uniform(0, 1)
+                Logger().info(f"Retrying with {config_name} in {delay:.1f}s ({type(e).__name__})")
+                await asyncio.sleep(delay)
+
+    @abstractmethod
+    def _initialize_client(self, api_key): ...
+
+    @abstractmethod
+    def _prepare_request(self, thread, response_format=None, **kwargs): ...
+
+    @abstractmethod
+    def _process_response(self, api_response, **process_options): ...
+
+    @abstractmethod
+    def _create_api_call(self, parameters: dict): ...

@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 
-from ..ai_providers.providers.shared.api_utilities import BaseWrapper
+from ..schema_utils import get_json_schema
 
 
 class PromptHandler:
@@ -115,6 +115,6 @@ class PromptHandler:
 
     @classmethod
     def build_prompt_with_schema(cls, prompt: str, response_format: Any = None) -> str:
-        if not (schema := BaseWrapper.get_json_schema(response_format)):
+        if not (schema := get_json_schema(response_format)):
             return prompt
         return f"{prompt}\n\nRespond with JSON matching this structure (omit optional keys if not needed):\n{json.dumps(cls._build_schema_example(schema), indent=2)}"
