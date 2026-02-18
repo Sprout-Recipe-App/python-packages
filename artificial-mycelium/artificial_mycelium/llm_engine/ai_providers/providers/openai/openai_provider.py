@@ -53,6 +53,8 @@ class OpenAIProvider(BaseProvider):
 
     def _prepare_request(self, thread, response_format: Any = None, **kwargs) -> tuple[dict[str, Any], dict]:
         params = {"input": thread.get_concatenated_content(), **kwargs}
+        if self.configuration.get("background"):
+            params["background"] = True
         post_process = {}
         if not response_format:
             return params, post_process
@@ -62,6 +64,11 @@ class OpenAIProvider(BaseProvider):
         if not schema:
             params["text"] = {"format": response_format}
             return params, post_process
+        params["text"] = {"format": self._to_strict_schema(schema, response_format)}
+        return params, post_process
+
+    @staticmethod
+    def _to_strict_schema(schema: dict, response_format: Any) -> dict:
         stack = [schema]
         while stack:
             item = stack.pop()
@@ -86,15 +93,12 @@ class OpenAIProvider(BaseProvider):
             if get_origin(response_format) is list and args and hasattr(args[0], "__name__")
             else "Response"
         )
-        params["text"] = {
-            "format": {
-                "type": "json_schema",
-                "strict": True,
-                "schema": schema,
-                "name": "".join(c if c.isalnum() or c in "_-" else "_" for c in name),
-            }
+        return {
+            "type": "json_schema",
+            "strict": True,
+            "schema": schema,
+            "name": "".join(c if c.isalnum() or c in "_-" else "_" for c in name),
         }
-        return params, post_process
 
     def _process_response(self, api_response: Any, *, unwrap_items=False) -> tuple[str, Any]:
         text = api_response.output_text

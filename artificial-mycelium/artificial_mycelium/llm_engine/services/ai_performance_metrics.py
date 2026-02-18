@@ -42,8 +42,9 @@ class AIPerformanceMetrics(BaseModel):
         )
 
     @classmethod
-    def from_usage(cls, usage: Any, pricing: dict[str, float], elapsed_time: float, **kwargs) -> Self:
+    def from_usage(cls, usage: Any, pricing: dict[str, float] | None, elapsed_time: float, **kwargs) -> Self:
         kwargs.setdefault("api_calls", 1)
+        pricing = pricing or {}
         if not usage:
             return cls(elapsed_time_seconds=elapsed_time, **kwargs)
 

@@ -16,8 +16,8 @@ class Thread:
         self.messages = []
 
     @classmethod
-    def add_first_message(cls, role="user", text="", **kwargs):
-        return cls().add_message(role, text, **kwargs)
+    def add_first_message(cls, role="user", text=""):
+        return cls().add_message(role, text)
 
     @classmethod
     def from_dicts(cls, messages: list[dict]) -> "Thread":
@@ -26,7 +26,7 @@ class Thread:
             t.add_message(m.get("role", "user"), m.get("content", ""))
         return t
 
-    def add_message(self, role, text="", **kwargs):
+    def add_message(self, role, text=""):
         self.messages.append(TextMessage(role=role, text=text))
         return self
 
@@ -59,12 +59,5 @@ class Thread:
         output[-1] = border("╰╯")
         return "\n".join(output)
 
-    def get_messages_as_dicts(self):
-        return [message.to_dict() for message in self.messages]
-
     def get_concatenated_content(self, include_roles: bool = True, separator: str = "\n\n") -> str:
-        return separator.join(
-            (f"{message['role']}: " if include_roles and message.get("role") else "") + message["content"]
-            for message in self.get_messages_as_dicts()
-            if message.get("content")
-        )
+        return separator.join((f"{m.role}: " if include_roles else "") + m.text for m in self.messages if m.text)

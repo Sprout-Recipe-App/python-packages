@@ -9,19 +9,12 @@ from ..services.prompt_handler import PromptHandler
 class AI:
     _providers = {"openai": OpenAIProvider, "google": GoogleProvider}
 
-    def __init__(self, provider="openai", name="4o", **kwargs):
+    def __init__(self, provider, name, **kwargs):
         self._provider = self._providers[provider](name, **kwargs)
-
-    def __getattr__(self, name):
-        return getattr(self._provider, name)
 
     @property
     def name(self):
         return self._provider.configuration_name
-
-    @property
-    def provider_name(self):
-        return type(self._provider).__name__
 
     async def get_response(self, thread, log_thread=False, **kwargs):
         if log_thread:
