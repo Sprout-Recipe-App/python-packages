@@ -55,16 +55,14 @@ class OpenAIProvider(BaseProvider):
         params = {"input": thread.get_concatenated_content(), **kwargs}
         if self.configuration.get("background"):
             params["background"] = True
-        post_process = {}
-        if not response_format:
-            return params, post_process
-        if get_origin(response_format) is list:
-            post_process = {"unwrap_items": True}
-        schema = get_json_schema(response_format)
-        if not schema:
-            params["text"] = {"format": response_format}
-            return params, post_process
-        params["text"] = {"format": self._to_strict_schema(schema, response_format)}
+        if reasoning := self.configuration.get("reasoning"):
+            params["reasoning"] = reasoning
+        post_process = {"unwrap_items": True} if get_origin(response_format) is list else {}
+        if response_format:
+            schema = get_json_schema(response_format)
+            params["text"] = {
+                "format": self._to_strict_schema(schema, response_format) if schema else response_format
+            }
         return params, post_process
 
     @staticmethod

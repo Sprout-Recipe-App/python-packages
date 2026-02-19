@@ -22,7 +22,6 @@ _MODEL_CONFIGURATIONS = {
 @with_error_handling()
 class GoogleProvider(BaseProvider):
     _retryable_errors = (httpx.ConnectError, httpx.RemoteProtocolError, ConnectionResetError, ServerError)
-    _max_retries = 10
 
     def __init__(self, configuration_name):
         super().__init__(configuration_name, _MODEL_CONFIGURATIONS, "GOOGLE_API_KEY")
