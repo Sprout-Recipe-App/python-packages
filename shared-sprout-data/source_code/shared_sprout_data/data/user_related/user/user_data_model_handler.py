@@ -1,10 +1,7 @@
 from datetime import datetime, timezone
 
 
-from .supports.user_account import UserAccount
-from .supports.user_identity import UserIdentity
-from .supports.user_preferences.user_preferences import UserPreferences
-from .user import User
+from .user import User, UserAccount, UserIdentity, UserPreferences
 
 
 class UserDataModelHandler:
