@@ -25,17 +25,16 @@ class UserDataModelHandler:
         user_id: str,
         name: str,
         birthday: datetime,
-        account_type: str = "free",
         priority: str = "Improving Health",
     ) -> User:
         return User(
-            account=UserAccount(user_id=user_id, account_type=account_type),
+            account=UserAccount(user_id=user_id),
             identity=UserIdentity(name=name, birthday=birthday),
             preferences=UserPreferences(priority=priority),
         )
 
     SEED_DATA = [
-        _preview_user("preview-user-alice", "Alice", datetime(1990, 6, 15, tzinfo=timezone.utc), "paid"),
-        _preview_user("preview-user-bob", "Bob", datetime(1985, 3, 22, tzinfo=timezone.utc), "paid"),
+        _preview_user("preview-user-alice", "Alice", datetime(1990, 6, 15, tzinfo=timezone.utc)),
+        _preview_user("preview-user-bob", "Bob", datetime(1985, 3, 22, tzinfo=timezone.utc)),
         _preview_user("preview-user-free", "Free User", datetime(2000, 1, 1, tzinfo=timezone.utc)),
     ]
