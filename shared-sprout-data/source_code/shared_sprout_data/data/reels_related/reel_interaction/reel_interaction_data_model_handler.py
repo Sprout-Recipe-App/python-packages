@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
-from database_dimension import MongoDBBaseModel, DataModelHandler
+from database_dimension import MongoDBBaseModel
 from pydantic import Field
 
 class InteractionType(str, Enum):
@@ -23,5 +23,5 @@ class ReelInteraction(MongoDBBaseModel):
     
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class ReelInteractionDataModelHandler(DataModelHandler, db="reels_related_data", collection="reel_interactions", model=ReelInteraction):
+class ReelInteractionDataModelHandler:
     pass

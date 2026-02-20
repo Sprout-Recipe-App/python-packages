@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import Optional
 
-from database_dimension import DataModelHandler
 
 from .transaction import Transaction
 
 
-class TransactionDataModelHandler(DataModelHandler, db="wallet_related_data", collection="transactions", model=Transaction):
+class TransactionDataModelHandler:
     @classmethod
     async def find_by_payment_intent(cls, payment_intent_id: str) -> Transaction | None:
         return await cls.find_one({"reference_id": payment_intent_id})

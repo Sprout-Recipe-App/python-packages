@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from database_dimension import MongoDBBaseModel, DataModelHandler
+from database_dimension import MongoDBBaseModel
 from pydantic import Field
 
 class ReelStats(MongoDBBaseModel):
@@ -31,5 +31,5 @@ class Reel(MongoDBBaseModel):
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class ReelDataModelHandler(DataModelHandler, db="reels_related_data", collection="reels", model=Reel):
+class ReelDataModelHandler:
     pass

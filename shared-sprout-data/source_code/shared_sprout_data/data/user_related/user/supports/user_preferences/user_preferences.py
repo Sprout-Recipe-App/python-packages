@@ -5,7 +5,7 @@ from .supports.recipe_preferences import RecipePreferences
 
 
 class UserPreferences(BaseModel):
-    priority: str
+    priority: str = "balanced"
     recipe_preferences: RecipePreferences = RecipePreferences()
     gui_preferences: GUIPreferences = GUIPreferences()
     saved_recipe_ids: list[str] = []

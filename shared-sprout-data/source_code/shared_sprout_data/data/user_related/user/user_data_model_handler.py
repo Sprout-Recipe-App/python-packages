@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-from database_dimension import DataModelHandler
 
 from .supports.user_account import UserAccount
 from .supports.user_identity import UserIdentity
@@ -8,7 +7,7 @@ from .supports.user_preferences.user_preferences import UserPreferences
 from .user import User
 
 
-class UserDataModelHandler(DataModelHandler, db="user_related_data", collection="users", model=User):
+class UserDataModelHandler:
     @classmethod
     def user_query(cls, user_id: str) -> dict:
         return {"account.user_id": user_id}

@@ -1,7 +1,6 @@
-from database_dimension import DataModelHandler
 from .wallet import Wallet
 
-class WalletDataModelHandler(DataModelHandler, db="wallet_related_data", collection="wallets", model=Wallet):
+class WalletDataModelHandler:
     @classmethod
     def user_query(cls, user_id: str) -> dict:
         return {"user_id": user_id}

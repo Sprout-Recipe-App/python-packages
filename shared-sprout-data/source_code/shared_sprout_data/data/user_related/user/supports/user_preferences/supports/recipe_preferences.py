@@ -4,7 +4,7 @@ from ......shared.recipe_enumerations import DietType, RecipeComplexity
 
 
 class RecipePreferences(BaseModel):
-    diet_type: DietType = DietType.ANY
+    diet_type: DietType | None = None
     excluded_ingredients: list[str] = []
     max_complexity: RecipeComplexity | None = None
     excluded_equipment: list[str] = []

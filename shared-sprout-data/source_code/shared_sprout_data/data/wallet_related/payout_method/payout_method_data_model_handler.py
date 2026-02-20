@@ -1,7 +1,6 @@
-from database_dimension import DataModelHandler
 from .payout_method import PayoutMethod
 
-class PayoutMethodDataModelHandler(DataModelHandler, db="wallet_related_data", collection="payout_methods", model=PayoutMethod):
+class PayoutMethodDataModelHandler:
     @classmethod
     async def get_user_methods(cls, user_id: str) -> list[PayoutMethod]:
         return await cls.find({"user_id": user_id})

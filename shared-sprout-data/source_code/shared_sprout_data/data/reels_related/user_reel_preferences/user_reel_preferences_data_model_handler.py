@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timezone
-from database_dimension import MongoDBBaseModel, DataModelHandler
+from database_dimension import MongoDBBaseModel
 from pydantic import Field
 
 class OnboardingAnswers(MongoDBBaseModel):
@@ -19,7 +19,7 @@ class UserReelPreferences(MongoDBBaseModel):
     
     last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class UserReelPreferencesDataModelHandler(DataModelHandler, db="reels_related_data", collection="user_reel_preferences", model=UserReelPreferences):
+class UserReelPreferencesDataModelHandler:
     @classmethod
     async def get_or_create(cls, user_id: str) -> UserReelPreferences:
         if prefs := await cls.find_one({"user_id": user_id}):
