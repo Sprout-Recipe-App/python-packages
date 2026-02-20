@@ -19,6 +19,7 @@ class UserIdentity(BaseModel):
 
 class GUIPreferences(BaseModel):
     background_images_enabled: bool = False
+    beta_features_enabled: bool = False
 
 
 class RecipePreferences(BaseModel):
