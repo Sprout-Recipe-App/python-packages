@@ -10,7 +10,7 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.34.0",
     "rich>=13.9.4",
-    "dev-pytopia @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=dev-pytopia",
+    "dev-pytopia",
 ]
 
 [tool.hatch.metadata]

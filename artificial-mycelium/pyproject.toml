@@ -7,7 +7,7 @@ name = "artificial-mycelium"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "database-dimension @ git+https://github.com/CodeThatCodes/python-packages@main#subdirectory=database-dimension",
+    "database-dimension",
     "google-genai>=1.0.0",
     "google-generativeai>=0.8.6",
     "openai>=1.92.0",
